@@ -17,7 +17,9 @@ useQuitButton =  device:getInfo("platform") ~= "IPHONE"
 local btnW = 500
 local btnHScale = 0.4 
 
-local adId = -1
+local adsRunning = false
+local adIds = {top=-1, bottom=-1, interstitial=-1}
+local firstAdShow = {top=false, bottom=false, interstitial=false}
 --------------------------------------------------------
 
 function sceneMainMenu:setUp(event)
@@ -33,12 +35,16 @@ function sceneMainMenu:setUp(event)
 
     -- title
     self.mainMenu = director:createNode({x=appWidth/2,y=appHeight-200})
-    self.mainMenu.titleOutline = director:createLines({x=0, y=0, coords={-240,-50, -240,50, 240,50, 240,-50, -240,-50},
+    local titleOutline = director:createLines({x=0, y=0,
+            coords={-240,-50, -240,50, 240,50, 240,-50, -240,-50},
             strokeWidth=4, strokeColor=color.white, alpha=0})
-    self.mainMenu:addChild(self.mainMenu.titleOutline)
-    self.mainMenu.titleText = director:createLabel({x=-210, y=-15, w=400, h=100,
-            hAlignment="left", vAlignment="bottom", text="Amazon Mobile Ads: The Game", color=color.white, xScale=1.2, yScale=1.2})
-    self.mainMenu:addChild(self.mainMenu.titleText)
+    self.mainMenu:addChild(titleOutline)
+    local titleText = director:createLabel({x=-212, y=-15, w=400, h=100,
+            hAlignment="left", vAlignment="bottom", text="Amazon Mobile Ads: The Game!", color=color.white, xScale=1.2, yScale=1.2})
+    self.mainMenu:addChild(titleText)
+    
+    self.mainMenu.adLabel = director:createLabel({x=50, y=50, w=appWidth-100, h=50,
+            hAlignment="left", vAlignment="bottom", text="Ad IDs loaded:", color=color.black})
 
     -- buttons
     self.btns = {}
@@ -52,7 +58,7 @@ function sceneMainMenu:setUp(event)
     sceneMainMenu:addButton("bottomBanner", "load new bottom banner", btnY, touchBottom, 20)
     
     btnY = btnY - 100
-    sceneMainMenu:addButton("interstitial", "display interstitial ad", btnY, touchBottom, 20)
+    sceneMainMenu:addButton("interstitial", "display interstitial ad", btnY, touchInterstitial, 20)
 
     if useQuitButton then
         btnY = btnY - 100
@@ -63,9 +69,33 @@ function sceneMainMenu:setUp(event)
     
     -- initialise and request an ad ID to use
     if amazonAds.isAvailable() then
-        if amazonAds.init("d61638a732ea4f459ea445797d546518", "5b1b1bf93f0644af9caaffc58fd467dc") then
-            adId = amazonAds.prepareAd()
+        adsRunning = amazonAds.init("d61638a732ea4f459ea445797d546518", "5b1b1bf93f0644af9caaffc58fd467dc")
+        
+        --load ads immediately for performance but dont show yet
+        if adsRunning then
+            self.prepareAd("top", false)
+            self.prepareAd("bottom", false)
+            self.prepareAd("interstitial")
         end
+    end
+end
+
+--adType can be "top", "bottom" or "interstitial"
+--interstitial ads can't be shown immediately
+function sceneMainMenu.prepareAd(adType, show)
+    show = show or true
+    if adIds[adType] ~= -1 then
+        amazonAds.destroyAd(adIds[adType])
+        adIds[adType] = -1
+    end
+        
+    adIds[adType] = amazonAds.prepareAd()
+    
+    if adType == "interstitial" then
+        amazonAds.loadInterstitialAd(adIds[adType])
+    else
+        amazonAds.prepareAdLayout(adIds[adType], adType, "auto")
+        amazonAds.loadAd(adIds[adType], show)
     end
 end
 
@@ -137,6 +167,8 @@ function sceneMainMenu:update(event)
         system:resumeTimers()
         resumeNodesInTree(self)
     end
+    
+    self.mainMenu.adLabel.text = "Ad IDs loaded: top=" .. adIds.top .. " btm=" .. adIds.bottom .. " inter=" .. adIds.interstitial
 end
 
 ---- Button handlers ----------------------------------------------------------
@@ -150,22 +182,44 @@ end
 
 function touchTop(self, event)
     if event.phase == "ended" then
-        amazonAds.prepareAdLayout(adId, "top", "auto")
-        amazonAds.loadAd(adId)
+        if not firstAdShow.top then --since we already loaded at startup
+            firstAdShow.top = true 
+            amazonAds.showAd(adIds.top)
+        else
+            --request and show a new ad
+            sceneMainMenu.prepareAd("top", true)
+        end
     end
 end
 
 function touchBottom(self, event)
     if event.phase == "ended" then
-        amazonAds.prepareAdLayout(adId, "bottom", "auto")
-        amazonAds.loadAd(adId)
+        if not firstAdShow.bottom then
+            firstAdShow.bottom = true 
+            amazonAds.showAd(adIds.bottom)
+        else
+            sceneMainMenu.prepareAd("bottom", true)
+        end
     end
 end
 
 function touchInterstitial(self, event)
     if event.phase == "ended" then
-        amazonAds.loadInterstitialAd(adId)
-        amazonAds.showAd(adId)
+        if not firstAdShow.interstitial then
+            firstAdShow.interstitial = true 
+            amazonAds.showAd(adIds.interstitial)
+        else
+            sceneMainMenu.prepareAd("interstitial")
+            -- TODO: since we dont have Ad callbacks yet, we'll just use a timer and hope the ad turns up in time!
+            -- once callbacks are added, will update this
+            system:addTimer(interstitLoaded, 2, 1)
+        end
+    end
+end
+
+function interstitLoaded(event)
+    if adIds.interstitial ~= -1 then
+        amazonAds.showAd(adIds.interstitial)
     end
 end
 

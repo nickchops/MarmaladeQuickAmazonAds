@@ -55,7 +55,7 @@ bool showAd(int adId);
 
 // Determine if the given ad is currently loading (false indicated loading finished or
 // app has not attempted to load)
-// NB: Using soem tolua++ trickery for multiple return type:
+// NB: Using some tolua++ trickery for multiple return types:
 //     function take one value (id) and returns two values (bools indicating success/failure
 //     and whether its loading): success, loading = amazonAdS:isLoading(id)
 bool isLoading(int adId, bool* loading=false);

@@ -13,7 +13,7 @@ function sceneGame:setUp(event)
     
     backButtonHelper:add({listener=self.quit, xCentre=appWidth/2, yCentre=200, btnWidth=appWidth/2,
                 btnTexture="textures/bigwhitebutton.png", pulse=true, activateOnRelease=true, animatePress=true,
-                deviceKeyOnly=false, drawArrowOnBtn=true, arrowThickness=5})
+                deviceKeyOnly=false, drawArrowOnBtn=true, arrowThickness=7})
 end
 
 function sceneGame:exitPostTransition(event)
