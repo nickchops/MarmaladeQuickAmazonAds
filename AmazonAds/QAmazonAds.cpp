@@ -3,28 +3,157 @@
 #include "s3eDevice.h"
 #include "IwDebug.h"
 #include "string.h"
+#include "QLuaHelpers.h"
+
+using namespace quick;
 
 namespace amazonAds {
+
+//---- Callbacks ----
+
+int32 onAdLoad(void* systemData, void* userData)
+{
+    QTrace("amazonAds::onAdLoad");
+    
+    s3eAmazonAdsCallbackLoadedData* data = static_cast<s3eAmazonAdsCallbackLoadedData*>(systemData);
+
+    if (data == NULL || data->m_Properties == NULL)
+    {
+        QTrace("onAdLoad error: callback data is NULL.");
+        return 1;
+    }
+
+    LUA_EVENT_PREPARE("amazonAds"); //here we have "defined" an event called "amazonAds"
+    //Chosen to have a single event for amazon ads and use "type" to switch
+    //between the 3 callbacks. Keeps the API small/manageable
+    LUA_EVENT_SET_STRING("type", "loaded");
+    LUA_EVENT_SET_INTEGER("adId", data->m_Id);
+    
+    const char* type;
+    if (data->m_Properties->m_AdType == S3E_AMAZONADS_TYPE_IMAGE_BANNER)
+        type = "imageBanner";
+    else if (data->m_Properties->m_AdType == S3E_AMAZONADS_TYPE_RICH_MEDIA_MRAID1)
+        type = "richMediaMraid1";
+    else if (data->m_Properties->m_AdType == S3E_AMAZONADS_TYPE_RICH_MEDIA_MRAID2)
+        type = "richMediaMraid2";
+    else if (data->m_Properties->m_AdType == S3E_AMAZONADS_TYPE_INTERSTITIAL)
+        type = "interstitial";
+    else
+        type = "unknown";
+    
+    
+    LUA_EVENT_SET_STRING("adType", type);
+    LUA_EVENT_SET_BOOLEAN("canPlayAudio", data->m_Properties->m_CanPlayAudio);
+    LUA_EVENT_SET_BOOLEAN("canPlayAudio", data->m_Properties->m_CanPlayVideo);
+    LUA_EVENT_SET_BOOLEAN("canExpand", data->m_Properties->m_CanExpand);
+    
+    LUA_EVENT_SEND();
+    
+    return true;
+}
+
+int32 onAdAction(void* systemData, void* userData)
+{
+    QTrace("amazonAds::onAdAction");
+    
+    s3eAmazonAdsCallbackActionData* data = static_cast<s3eAmazonAdsCallbackActionData*>(systemData);
+
+    if (data == NULL)
+    {
+        QTrace("onAdAction error: callback data is NULL.");
+        return 1;
+    }
+
+    LUA_EVENT_PREPARE("amazonAds");
+    LUA_EVENT_SET_STRING("type", "action");
+    LUA_EVENT_SET_INTEGER("adId", data->m_Id);
+    
+    const char* type;
+    if (data->m_Type == S3E_AMAZONADS_ACTION_EXPANDED)
+        type = "expanded";
+    else if (data->m_Type == S3E_AMAZONADS_ACTION_COLLAPSED)
+        type = "collapsed";
+    else
+        type = "dismissed";
+    
+    LUA_EVENT_SET_STRING("actionType", type);
+    
+    LUA_EVENT_SEND();
+    
+    return true;
+}
+
+int32 onAdError(void* systemData, void* userData)
+{
+    QTrace("amazonAds::onAdError");
+    
+    s3eAmazonAdsCallbackErrorData* data = static_cast<s3eAmazonAdsCallbackErrorData*>(systemData);
+
+    if (data == NULL)
+    {
+        QTrace("onAdError error: callback data is NULL.");
+        return 1;
+    }
+
+    LUA_EVENT_PREPARE("amazonAds");
+    LUA_EVENT_SET_STRING("type", "error");
+    LUA_EVENT_SET_INTEGER("adId", data->m_Id);
+    
+    const char* error;
+    if (data->m_Error == S3E_AMAZONADS_ERR_LOAD_NETWORK_ERROR)
+        error = "networkError";
+    else if (data->m_Error == S3E_AMAZONADS_ERR_LOAD_NETWORK_TIMEOUT)
+        error = "networkTimeout";
+    else if (data->m_Error == S3E_AMAZONADS_ERR_LOAD_NO_FILL)
+        error = "noFill";
+    else if (data->m_Error == S3E_AMAZONADS_ERR_LOAD_INTERNAL_ERROR)
+        error = "internalError";
+    else if (data->m_Error == S3E_AMAZONADS_ERR_LOAD_REQUEST_ERROR)
+        error = "requestError";
+    else
+        error = "unknown";
+    
+    LUA_EVENT_SET_STRING("error", error);
+    
+    LUA_EVENT_SEND();
+    
+    return true;
+}
+
+
+//---- Public functions ----
 
 bool isAvailable()
 {
     return s3eAmazonAdsAvailable();
 }
 
-bool init(char* androidAppKey, char* iosAppKey, bool enableTesting, bool enableLogging)
+bool init(char* androidAppKey, char* iosAppKey, bool enableTesting, bool enableLogging, bool useEvents)
 {
+    //todo? might want a reloadAdOnSurfaceChange callback that asks for a new ad if there
+    //is a rotation or resize event...
+    
+    bool initialised = false;
+    
     if (s3eDeviceGetInt(S3E_DEVICE_OS) == S3E_OS_ID_ANDROID)
     {
         if (!androidAppKey || !androidAppKey[0]) return false;
-		return s3eAmazonAdsInit(androidAppKey, enableTesting, enableLogging) == S3E_RESULT_SUCCESS;
+		initialised = s3eAmazonAdsInit(androidAppKey, enableTesting, enableLogging) == S3E_RESULT_SUCCESS;
     }
 	else if (s3eDeviceGetInt(S3E_DEVICE_OS) == S3E_OS_ID_IPHONE)
     {
         if (!iosAppKey || !iosAppKey[0]) return false;
-		return s3eAmazonAdsInit(iosAppKey, enableTesting, enableLogging) == S3E_RESULT_SUCCESS;
+		initialised = s3eAmazonAdsInit(iosAppKey, enableTesting, enableLogging) == S3E_RESULT_SUCCESS;
     }
-    else
-        return false;
+    
+    if (initialised && useEvents)
+    {
+        s3eAmazonAdsRegister(S3E_AMAZONADS_CALLBACK_AD_LOADED, onAdLoad,  NULL);
+        s3eAmazonAdsRegister(S3E_AMAZONADS_CALLBACK_AD_ACTION, onAdAction, NULL);
+        s3eAmazonAdsRegister(S3E_AMAZONADS_CALLBACK_AD_ERROR,  onAdError,  NULL);
+    }
+    
+    return initialised;
 }
 
 bool terminate()

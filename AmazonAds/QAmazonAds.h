@@ -21,7 +21,7 @@ namespace amazonAds {
 
 bool isAvailable();
 
-bool init(char* androidAppKey, char* iosAppKey, bool enableTesting=true, bool enableLogging=true);
+bool init(char* androidAppKey, char* iosAppKey, bool enableTesting=true, bool enableLogging=true, bool useEvents=true);
 bool terminate();
 
 // returns an integer ad ID or -1 on failure. This should then be passed to
