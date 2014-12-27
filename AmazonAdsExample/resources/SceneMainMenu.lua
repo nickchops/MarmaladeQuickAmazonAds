@@ -20,6 +20,8 @@ local btnHScale = 0.4
 local adsRunning = false
 local adIds = {top=-1, bottom=-1, interstitial=-1}
 local firstAdShow = {top=false, bottom=false, interstitial=false}
+local gotInterstitial = false
+
 --------------------------------------------------------
 
 function sceneMainMenu:setUp(event)
@@ -45,6 +47,10 @@ function sceneMainMenu:setUp(event)
     
     self.mainMenu.adLabel = director:createLabel({x=50, y=50, w=appWidth-100, h=50,
             hAlignment="left", vAlignment="bottom", text="Ad IDs loaded:", color=color.black})
+    
+    self.mainMenu.adLoadLabel = director:createLabel({x=50, y=50, w=appWidth-100, h=50,
+            hAlignment="left", vAlignment="bottom", text="Interstitial ad: not loaded", color=color.black})
+
 
     -- buttons
     self.btns = {}
@@ -58,7 +64,7 @@ function sceneMainMenu:setUp(event)
     sceneMainMenu:addButton("bottomBanner", "load new bottom banner", btnY, touchBottom, 20)
     
     btnY = btnY - 100
-    sceneMainMenu:addButton("interstitial", "display interstitial ad", btnY, touchInterstitial, 20)
+    sceneMainMenu:addButton("interstitial", "load interstitial ad", btnY, touchInterstitial, 20)
 
     if useQuitButton then
         btnY = btnY - 100
@@ -76,6 +82,8 @@ function sceneMainMenu:setUp(event)
             self.prepareAd("top", false)
             self.prepareAd("bottom", false)
             self.prepareAd("interstitial")
+            
+            system:addEventListener("amazonAds", adsListener)
         end
     end
 end
@@ -93,6 +101,8 @@ function sceneMainMenu.prepareAd(adType, show)
     
     if adType == "interstitial" then
         amazonAds.loadInterstitialAd(adIds[adType])
+        gotInterstitial = false --reset
+        self.mainMenu.adLoadLabel.text = "Interstitial ad: loading..."
     else
         amazonAds.prepareAdLayout(adIds[adType], adType, "auto")
         amazonAds.loadAd(adIds[adType], show)
@@ -176,7 +186,18 @@ end
 function touchStart(self, event)
     if event.phase == "ended" then
         disableMainMenu()
-        director:moveToScene(sceneGame, {transitionType="slideInR", transitionTime=0.8})
+        
+        local startGame = true
+        
+        if gotInterstitial then
+            if amazonAds.showAd(adIds.interstitial) then
+                startGame = false
+            end
+        end
+        
+        if startGame then
+            director:moveToScene(sceneGame, {transitionType="slideInR", transitionTime=0.8})
+        end
     end
 end
 
@@ -210,16 +231,23 @@ function touchInterstitial(self, event)
             amazonAds.showAd(adIds.interstitial)
         else
             sceneMainMenu.prepareAd("interstitial")
-            -- TODO: since we dont have Ad callbacks yet, we'll just use a timer and hope the ad turns up in time!
-            -- once callbacks are added, will update this
-            system:addTimer(interstitLoaded, 2, 1)
         end
     end
 end
 
-function interstitLoaded(event)
-    if adIds.interstitial ~= -1 then
-        amazonAds.showAd(adIds.interstitial)
+function adsListener(event)
+    if event.type == "loaded" then
+        if event.adType == "interstitial" then
+            gotInterstitial = true
+            dbg.print("interstitial ad loaded")
+            self.mainMenu.adLoadLabel.text = "Interstitial loaded: will display on game start"
+        end
+    elseif event.type == "action" then
+        if event.actionType == "dismissed" then
+            director:moveToScene(sceneGame, {transitionType="slideInR", transitionTime=0.8})
+        end
+    elseif event.type == "error" then
+        dbg.pring("Error loading ad (#".. event.adId .. "): " .. event.error)
     end
 end
 
