@@ -45,10 +45,10 @@ function sceneMainMenu:setUp(event)
             hAlignment="left", vAlignment="bottom", text="Amazon Mobile Ads: The Game!", color=color.white, xScale=1.2, yScale=1.2})
     self.mainMenu:addChild(titleText)
     
-    self.mainMenu.adLabel = director:createLabel({x=50, y=50, w=appWidth-100, h=50,
+    self.mainMenu.adLabel = director:createLabel({x=50, y=70, w=appWidth-100, h=50,
             hAlignment="left", vAlignment="bottom", text="Ad IDs loaded:", color=color.black})
     
-    self.mainMenu.adLoadLabel = director:createLabel({x=50, y=50, w=appWidth-100, h=50,
+    self.mainMenu.adLoadLabel = director:createLabel({x=50, y=30, w=appWidth-100, h=50,
             hAlignment="left", vAlignment="bottom", text="Interstitial ad: not loaded", color=color.black})
 
 
@@ -102,7 +102,7 @@ function sceneMainMenu.prepareAd(adType, show)
     if adType == "interstitial" then
         amazonAds.loadInterstitialAd(adIds[adType])
         gotInterstitial = false --reset
-        self.mainMenu.adLoadLabel.text = "Interstitial ad: loading..."
+        sceneMainMenu.mainMenu.adLoadLabel.text = "Interstitial ad: loading..."
     else
         amazonAds.prepareAdLayout(adIds[adType], adType, "auto")
         amazonAds.loadAd(adIds[adType], show)

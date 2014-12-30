@@ -11,6 +11,11 @@ else
     subproject "$MARMALADE_ROOT/quick/quick"
 }
 
+subprojects
+{
+    s3eAmazonAds
+}
+
 options
 {
     s3e-data-dir = resources

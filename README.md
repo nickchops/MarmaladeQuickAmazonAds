@@ -22,7 +22,8 @@ Setup: Add and build this wrapper into Quick
    C++ code that Lua bindings will be generated for.
 
 3. Edit quick/quickuser_tolua.pkg and add this new line:
-   $cfile "quickuser/AmazonAds/QAmazonAds.h"
+
+        $cfile "quickuser/AmazonAds/QAmazonAds.h"
 
 4. Edit quick/quickuser.kmf and add the folowing to the 'files' block so that
    the wrappers can be built into the Quick binaries::
@@ -30,32 +31,65 @@ Setup: Add and build this wrapper into Quick
         quickuser/AmazonAds/QAmazonAds.h
         quickuser/AmazonAds/QAmazonAds.cpp
 
-5. In quickuser.kmf, also add s3eAmazonAds to the 'subprojects' block.
+5. In quickuser.kmf, also add s3eAmazonAds to the 'subprojects' block:
+
+        subprojects
+        {
+            s3eAmazonAds
+        }
+        
    This allows C++ parts of the actual extension to be built into Quick's
    binaries.
    
 5. Run quick/quickuser_tolua.bat to generate Lua bindings.
 
 6. Rebuild the Quick binaries by running the scripts (build_quick_prebuilt.bat
-   etc)
+   etc.)
 
 Using Amazon Ads in your app
 ----------------------------
 
 1. Add s3eAmazonAds to the 'subprojects' block in your apps .mkb project file.
    This is needed so that platform specific extension libraries (jar, lib etc)
-   will be bundled into your app when you deploy it.
+   will be bundled into your app when you deploy it. All ads calls will fail
+   if you forget this!
 
 2. Use the Lua APIs in your app! Look in QAmazonAds.h. The Lua functions match
    the C++ ones here. The namespace becomes a table, char* becomes a string,
-   int a number, etc. Make sure you use amazonAds.xxx() and not amazonAds:xxx() !
+   int a number, etc. Make sure you use amazonAds.xxx() and not amazonAds:xxx()!
+   
+   Quick events are provided to match the C callbacks from s3eAmazonAds.
+   Quick Amazon Ads uses a single event called "amazonAds" which is registered
+   with the usual system:addEventListener function. The "type" value of the
+   table passed to your listener indicates which of the callbacks is being.
+   The three types are "loaded", "action" and "error".
 
 Example::
    
         myAdId = -1
+        
+        function adsListener(event)
+        {
+            if event.type == "loaded" then
+                if event.adType == "interstitial" then
+                    dbg.print("interstitial ad loaded")
+                end
+            elseif event.type == "action" then
+                if event.actionType == "dismissed" then
+                    dbg.print("interstitial ad closed")
+                end
+            elseif event.type == "error" then
+                dbg.pring("Error loading ad (#".. event.adId .. "): " .. event.error)
+            end
+        end
+
+        }
+        
         if amazonAds.isAvailable() then
             if amazonAds.init("123456789", "987654321") then
                 myAdId = amazonAds.prepareAd()
+                
+                system:addEventListener("amazonAds", adsListener)
 
                 if myAdId ~= -1 then
                     if amazonAds.prepareAdLayout(myAdId, "bottom") then
@@ -65,5 +99,6 @@ Example::
             end
         end
         
+        
 See http://docs.madewithmarmalade.com/display/MD/Amazon+Mobile+Ads for further
-info inc signing up for and setting up the ads service online.
+info inc signing-up for and setting up the ads service online.
