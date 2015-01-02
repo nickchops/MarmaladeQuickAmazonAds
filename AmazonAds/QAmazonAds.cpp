@@ -48,8 +48,8 @@ int32 onAdLoad(void* systemData, void* userData)
     LUA_EVENT_SET_BOOLEAN("canExpand", data->m_Properties->m_CanExpand);
     
     LUA_EVENT_SEND();
-    
-    return true;
+    lua_pop(g_L, 1);
+    return 0;
 }
 
 int32 onAdAction(void* systemData, void* userData)
@@ -79,8 +79,8 @@ int32 onAdAction(void* systemData, void* userData)
     LUA_EVENT_SET_STRING("actionType", type);
     
     LUA_EVENT_SEND();
-    
-    return true;
+    lua_pop(g_L, 1);
+    return 0;
 }
 
 int32 onAdError(void* systemData, void* userData)
@@ -116,8 +116,8 @@ int32 onAdError(void* systemData, void* userData)
     LUA_EVENT_SET_STRING("error", error);
     
     LUA_EVENT_SEND();
-    
-    return true;
+    lua_pop(g_L, 1);
+    return 0;
 }
 
 
