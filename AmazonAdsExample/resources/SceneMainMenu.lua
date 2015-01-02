@@ -66,7 +66,7 @@ function sceneMainMenu:setUp(event)
     enableMainMenu()
     
     if not adsRunning and amazonAds.isAvailable() then
-        adsRunning = amazonAds.init("d61638a732ea4f459ea445797d546518", "5b1b1bf93f0644af9caaffc58fd467dc")
+        adsRunning = amazonAds.init("your android ad key here", "your ios ad key here")
     end
     
     --load ads immediately for performance but dont show yet

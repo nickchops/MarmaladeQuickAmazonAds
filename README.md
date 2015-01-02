@@ -71,15 +71,14 @@ Example::
         function adsListener(event)
         {
             if event.type == "loaded" then
-                if event.adType == "interstitial" then
-                    dbg.print("interstitial ad loaded")
+                dbg.print("ad with id #" .. event.adId .. " loaded")
                 end
             elseif event.type == "action" then
                 if event.actionType == "dismissed" then
-                    dbg.print("interstitial ad closed")
+                    dbg.print("ad with id #" .. event.adId .. " dismissed")
                 end
             elseif event.type == "error" then
-                dbg.pring("Error loading ad (#".. event.adId .. "): " .. event.error)
+                dbg.pring("Error loading ad (#" .. event.adId .. "): " .. event.error)
             end
         end
 
@@ -101,4 +100,5 @@ Example::
         
         
 See http://docs.madewithmarmalade.com/display/MD/Amazon+Mobile+Ads for further
-info inc signing-up for and setting up the ads service online.
+info inc signing-up for and setting up the ads service online. Check the C++
+docs for any known issues or gotchas!
