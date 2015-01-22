@@ -6,7 +6,7 @@ Marmalade SDK.
 Prerequisites
 -------------
 
-1. Marmalade SDK 7.4 or newer for the Amazon Mobile Ads extension adn Quick
+1. Marmalade SDK 7.4 or newer for the Amazon Mobile Ads extension and Quick
    improvements. Check for extensions/s3eAmazonAds existing inside your SDK
    install.
    
@@ -25,8 +25,8 @@ Two options for where to put the MarmaladeQuickAmazonAds github files:
   You can do that for each SDK install you have and pick up the same live
   github project in both :)
         
-2. Alternatively option - put the files in quick/quickuser. You'll have to
-   copy/update each time you update SDK or github.
+- Alternative lazy option - put the files in quick/quickuser. You'll have to
+  copy/update each time you update SDK or github.
 
    
 Setup: Add and build this wrapper into Quick
@@ -43,8 +43,7 @@ Setup: Add and build this wrapper into Quick
             MarmaladeQuickAmazonAds/QAmazonAds
         }
         
-   This allows C++ parts of the actual extension to be built into Quick's
-   binaries. If you copied to quick/quickuser, you'll need to prefix with
+   If you copied to quick/quickuser, you'll need to prefix with
    the full path to that folder.
    
 3. Run quick/quickuser_tolua.bat to generate Lua bindings.
@@ -56,7 +55,13 @@ Setup: Add and build this wrapper into Quick
 Using Amazon Ads in your app
 ----------------------------
 
-1. Add s3eAmazonAds to the 'subprojects' block in your apps .mkb project file.
+1. Add the extension to the 'subprojects' block in your apps .mkb project file:
+
+        subprojects
+        {
+            s3eAmazonAds
+        }
+
    This is needed so that platform specific extension libraries (jar, lib etc)
    will be bundled into your app when you deploy it. All ads calls will fail
    if you forget this!
