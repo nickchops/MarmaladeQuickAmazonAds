@@ -8,7 +8,8 @@ Prerequisites
 
 1. Marmalade SDK 7.4 or newer for the Amazon Mobile Ads extension and Quick
    improvements. Check for extensions/s3eAmazonAds existing inside your SDK
-   install.
+   install. NB: There is a bug in 7.5.0 - fixed since, or see
+   http://docs.madewithmarmalade.com/display/MD/Known+issues for workaround.
    
 2. Scripts for rebuilding Quick binaries. Get these from
    https://github.com/nickchops/MarmaladeQuickRebuildScripts Copy those to the
