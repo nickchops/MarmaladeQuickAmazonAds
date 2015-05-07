@@ -1,4 +1,18 @@
 
+**This wrapper is deprecated as of Marmalade 7.7.0**
+
+Marmalade 7.7 includes its own version of this wrapper, already built into
+the Quick engine. The API is identical, it's just been integrated into the SDK.
+
+If using 7.7 or newer, please swap to the official version. You'll need to
+remove references to this old version from quickuser_tolua.pkg and
+quickuser.mkf You still need to include s3eAmazonAds as a subproject in
+your app project for the new version.
+
+This old version will still work with pre 7.7 SDK versions.
+
+-------------------------------------------------------------------------------
+
 Note: All the paths here are relative to the root folder of your installed
 Marmalade SDK.
 
@@ -21,7 +35,7 @@ Two options for where to put the MarmaladeQuickAmazonAds github files:
   haven't already, add your github root to global search by putting the
   following in < marmalade-root >/s3e/s3e-default.mkf:
 
-        options { module_paths="path/to/my/github/projects/root" }
+        options { module_path="path/to/my/github/projects/root" }
 
   You can do that for each SDK install you have and pick up the same live
   github project in both :)
